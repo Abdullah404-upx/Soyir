@@ -1,0 +1,74 @@
+from utils.Preprocessing import cleanText
+import math
+import json
+import pandas as pd 
+
+
+df = pd.read_csv('searchengine\data\\a.csv',  usecols= ['_id', 'overview'])
+print(str(df["overview"][0]))
+
+wordIndex = {}
+# Old version: wordIndex["cat"]=  {"idf": 5, "docs": {"doc1": 3, "doc2": 5}}
+# current version: wordIndex["cat"]=  [idf, {"doc1": 523, "doc2": 3}]
+
+# docIndex = {"documentID": lengthOfDocument}
+docIndex = {}
+
+N = len(df)
+
+
+
+
+def calculateIDF():
+    
+    for word in wordIndex.keys():
+        nq = len(wordIndex[word][1])
+        wordIndex[word][0] = math.log((N - nq + 0.5 / nq + .5) + 1 )
+        
+
+# build vocab and calcuaiton tf 
+def buildVocab(doc): 
+    
+    a= set(doc["text"])
+    for word in a:
+        try:
+            wordIndex[word][1][doc["id"]] =  doc["text"].count(word)
+        except:
+            wordIndex[word] = [0, {}]
+            wordIndex[word][1][doc["id"]] = doc["text"].count(word)
+
+
+def saveIndex():
+    with open('searchengine\data\invertedindex.json', 'w') as outfile:
+        json.dump(wordIndex, outfile)
+    with open('searchengine\data\docindex.json', 'w') as outfile:
+        json.dump(docIndex, outfile)
+    print(len(wordIndex), 'terms and ', len(docIndex), ' docs have been indexed and saved.')
+
+
+###############################################
+
+
+def buildInvertedIndex():
+
+    doc = {}
+    for i in range(N): 
+        #print(doc, doc["id"])
+        doc["id"] = i 
+        doc["text"] = cleanText(str(df['overview'][i]))
+        docIndex[doc["id"]] = len(doc["text"])
+        buildVocab(doc)    
+  
+    
+    calculateIDF()
+
+    saveIndex()    
+
+buildInvertedIndex()
+ 
+
+#print(wordIndex)
+###############################################################
+
+			
+
